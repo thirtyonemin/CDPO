@@ -267,6 +267,25 @@
     }
     .map-btn:hover { background-color: #02b351; }
     .map-icon { margin-right: 4px; }
+
+        /* 📅 캘린더 저장 버튼 스타일 */
+    .save-btn {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 8px;
+        margin-right: 5px; /* 지도 버튼이랑 나란히 놓을 때 간격 */
+        padding: 6px 12px;
+        background-color: #6c5ce7; /* 보라색 포인트 */
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.2s;
+        border: none;
+    }
+    .save-btn:hover { background-color: #5649c0; }
     </style>
 </head>
 <body>
@@ -456,7 +475,10 @@
     }
 
 function showDetail(dateStr, element) {
-    document.getElementById('detailPanel').classList.remove('collapsed');
+        // 📱 (모바일) 날짜 누르면 패널 자동으로 펼치기
+        const detailPanel = document.getElementById('detailPanel');
+        if (detailPanel) detailPanel.classList.remove('collapsed');
+
         if(element) {
             document.querySelectorAll('.day').forEach(el => el.classList.remove('selected'));
             element.classList.add('selected');
@@ -471,29 +493,39 @@ function showDetail(dateStr, element) {
         }
 
         const currentObj = parseDate(dateStr);
-        // 해당 날짜에 걸치는 일정 찾기
         const activeEvents = events.filter(evt => currentObj >= parseDate(evt.start) && currentObj <= parseDate(evt.end));
 
         if (activeEvents.length > 0) {
             htmlContent += activeEvents.map(evt => {
-                // 📍 장소 데이터가 있으면 지도 버튼 생성 (네이버 지도 검색 링크)
+                
+                // 1️⃣ [저장 버튼]은 조건 없이 무조건 만듭니다. (if문 밖!)
+                const saveBtnHtml = `
+                    <button class="save-btn" onclick="downloadIcs('${evt.title}', '${evt.start}', '${evt.end}', '${evt.location || ''}', '${evt.desc}')">
+                        📅 저장
+                    </button>
+                `;
+
+                // 2️⃣ [지도 버튼]은 장소가 있을 때만 만듭니다. (if문 안!)
                 let mapLinkHtml = '';
                 if (evt.location) {
-                    // 검색어 URL 인코딩 (한글 깨짐 방지)
-                    const query = encodeURIComponent(evt.location);
                     mapLinkHtml = `
                         <a href="javascript:void(0);" onclick="openMap('${evt.location}')" class="map-btn">
-                            <span class="map-icon">📍</span> ${evt.location}
+                            <span class="map-icon">📍</span> ${evt.location} 보기
                         </a>
                     `;
                 }
 
+                // 3️⃣ 화면에 보여줄 HTML 합치기
                 return `
                 <div class="task-card type-${evt.type}">
                     <span class="tag type-${evt.type}">${categories[evt.type]}</span>
                     <span class="task-title">${evt.title}</span>
                     <div class="task-desc">${evt.desc}</div>
-                    ${mapLinkHtml} <div style="font-size:11px; color:var(--text-secondary); margin-top:8px; font-weight:bold;">
+                    
+                    <div style="margin-top:8px; display:flex; flex-wrap:wrap;">
+                        ${saveBtnHtml}  ${mapLinkHtml}  </div>
+
+                    <div style="font-size:11px; color:var(--text-secondary); margin-top:8px; font-weight:bold;">
                         ${evt.start} ~ ${evt.end}
                     </div>
                 </div>
@@ -618,6 +650,40 @@ function showDetail(dateStr, element) {
         } else {
             alert("해당 날짜를 찾을 수 없습니다.");
         }
+    }
+
+    // 📅 일정을 내 폰 캘린더(ICS)로 내보내는 함수
+    function downloadIcs(title, startDate, endDate, location, description) {
+        // 날짜 포맷팅 (YYYYMMDD) - 하이픈 제거
+        const start = startDate.replace(/-/g, '');
+        const end = endDate.replace(/-/g, '');
+        
+        // 하루짜리 일정은 종료일을 다음날로 설정해야 달력앱이 올바르게 인식함
+        // (간단하게 구현하기 위해 종료일이 시작일과 같으면 +1일 하는 로직은 생략하고, 
+        //  대신 종일 일정(VALUE=DATE)으로 처리합니다.)
+
+        const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//CDPO Orchestra//Calendar App//KO
+BEGIN:VEVENT
+UID:${new Date().getTime()}@cdpo.app
+DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
+DTSTART;VALUE=DATE:${start}
+DTEND;VALUE=DATE:${parseInt(end) + 1} 
+SUMMARY:${title}
+DESCRIPTION:${description || ''}
+LOCATION:${location || ''}
+END:VEVENT
+END:VCALENDAR`;
+
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${title}.ics`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 </script>
 
