@@ -155,6 +155,22 @@
             .search-box { width: 140px; }
             .legend { display: flex; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; }
         }
+        /* 📍 지도 버튼 스타일 */
+    .map-btn {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 8px;
+        padding: 6px 12px;
+        background-color: #03C75A; /* 네이버 지도 녹색 */
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: bold;
+        transition: background 0.2s;
+    }
+    .map-btn:hover { background-color: #02b351; }
+    .map-icon { margin-right: 4px; }
     </style>
 </head>
 <body>
@@ -340,7 +356,7 @@
         if(searchInput.value) filterEvents();
     }
 
-    function showDetail(dateStr, element) {
+function showDetail(dateStr, element) {
         if(element) {
             document.querySelectorAll('.day').forEach(el => el.classList.remove('selected'));
             element.classList.add('selected');
@@ -348,19 +364,42 @@
         const [y, m, d] = dateStr.split('-');
         displayDate.textContent = `${m}월 ${d}일`;
         let htmlContent = '';
-        if (holidays2026[dateStr]) htmlContent += `<div class="holiday-card"><span class="holiday-badge">공휴일</span><span>${holidays2026[dateStr]}</span></div>`;
+        
+        // 공휴일 표시
+        if (holidays2026[dateStr]) {
+            htmlContent += `<div class="holiday-card"><span class="holiday-badge">공휴일</span><span>${holidays2026[dateStr]}</span></div>`;
+        }
+
         const currentObj = parseDate(dateStr);
+        // 해당 날짜에 걸치는 일정 찾기
         const activeEvents = events.filter(evt => currentObj >= parseDate(evt.start) && currentObj <= parseDate(evt.end));
+
         if (activeEvents.length > 0) {
-            htmlContent += activeEvents.map(evt => `
+            htmlContent += activeEvents.map(evt => {
+                // 📍 장소 데이터가 있으면 지도 버튼 생성 (네이버 지도 검색 링크)
+                let mapLinkHtml = '';
+                if (evt.location) {
+                    // 검색어 URL 인코딩 (한글 깨짐 방지)
+                    const query = encodeURIComponent(evt.location);
+                    mapLinkHtml = `
+                        <a href="https://m.map.naver.com/search2/search.naver?query=${query}" target="_blank" class="map-btn">
+                            <span class="map-icon">📍</span> ${evt.location} 보기
+                        </a>
+                    `;
+                }
+
+                return `
                 <div class="task-card type-${evt.type}">
                     <span class="tag type-${evt.type}">${categories[evt.type]}</span>
                     <span class="task-title">${evt.title}</span>
                     <div class="task-desc">${evt.desc}</div>
-                    <div style="font-size:11px; color:var(--text-secondary); margin-top:5px; font-weight:bold;">${evt.start} ~ ${evt.end}</div>
+                    ${mapLinkHtml} <div style="font-size:11px; color:var(--text-secondary); margin-top:8px; font-weight:bold;">
+                        ${evt.start} ~ ${evt.end}
+                    </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
+        
         if (!htmlContent) htmlContent = `<div style="text-align:center; color:var(--text-secondary); margin-top:20px;">일정이 없습니다.</div>`;
         taskList.innerHTML = htmlContent;
     }
