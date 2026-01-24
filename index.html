@@ -652,30 +652,43 @@ function showDetail(dateStr, element) {
         }
     }
 
-    // 📅 일정을 내 폰 캘린더(ICS)로 내보내는 함수
+// 📅 일정을 내 폰 캘린더(ICS)로 내보내는 함수 (날짜 계산 버그 수정판)
     function downloadIcs(title, startDate, endDate, location, description) {
-        // 날짜 포맷팅 (YYYYMMDD) - 하이픈 제거
-        const start = startDate.replace(/-/g, '');
-        const end = endDate.replace(/-/g, '');
-        
-        // 하루짜리 일정은 종료일을 다음날로 설정해야 달력앱이 올바르게 인식함
-        // (간단하게 구현하기 위해 종료일이 시작일과 같으면 +1일 하는 로직은 생략하고, 
-        //  대신 종일 일정(VALUE=DATE)으로 처리합니다.)
+        // 1. 문자열 날짜를 실제 날짜 객체로 변환
+        const sDate = new Date(startDate);
+        const eDate = new Date(endDate);
 
+        // 2. 캘린더 앱은 종료일을 '다음날 0시'로 인식하므로 하루를 더해줌
+        // (Date 객체는 알아서 31일 다음을 다음달 1일로 계산함)
+        eDate.setDate(eDate.getDate() + 1);
+
+        // 3. YYYYMMDD 형식으로 바꿔주는 도우미 함수 (0 채우기 포함)
+        function formatDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0'); // 1월 -> 01
+            const d = String(date.getDate()).padStart(2, '0');      // 1일 -> 01
+            return `${y}${m}${d}`;
+        }
+
+        const startStr = formatDate(sDate);
+        const endStr = formatDate(eDate);
+
+        // 4. ICS 파일 내용 생성
         const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//CDPO Orchestra//Calendar App//KO
 BEGIN:VEVENT
 UID:${new Date().getTime()}@cdpo.app
 DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z
-DTSTART;VALUE=DATE:${start}
-DTEND;VALUE=DATE:${parseInt(end) + 1} 
+DTSTART;VALUE=DATE:${startStr}
+DTEND;VALUE=DATE:${endStr}
 SUMMARY:${title}
 DESCRIPTION:${description || ''}
 LOCATION:${location || ''}
 END:VEVENT
 END:VCALENDAR`;
 
+        // 5. 파일 다운로드 트리거
         const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
