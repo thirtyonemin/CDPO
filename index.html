@@ -48,7 +48,25 @@
         .title-group { display: flex; align-items: center; gap: 15px; }
         .header-title { font-size: 24px; font-weight: 800; margin: 0; color: var(--text-primary); }
         
-        .d-day-badge { background-color: var(--dday-bg); color: var(--dday-text); padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); animation: bounce 2s infinite; display: none; }
+        .d-day-badge { 
+            background-color: var(--dday-bg); 
+            color: var(--dday-text); 
+            padding: 6px 12px; 
+            border-radius: 20px; 
+            font-weight: bold; 
+            font-size: 14px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            animation: bounce 2s infinite; 
+            display: none; 
+            cursor: pointer; /* 누를 수 있다는 손가락 표시 */
+            transition: transform 0.2s; /* 눌렀을 때 부드럽게 */
+        }
+        
+        /* 마우스 올리면 살짝 커지는 효과 */
+        .d-day-badge:hover {
+            transform: scale(1.05); 
+            animation: none; /* 호버 시에는 통통 튀는 애니메이션 잠시 멈춤 */
+        }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 
         .controls { display: flex; gap: 10px; align-items: center; }
@@ -503,8 +521,15 @@ function showDetail(dateStr, element) {
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
             
             let dDayText = diffDays === 0 ? "D-Day" : `D-${diffDays}`;
+            
+            // 이동할 날짜 문자열 생성 (예: 2026-5-23)
+            const targetDateStr = `${nextEvent.dateObj.getFullYear()}-${nextEvent.dateObj.getMonth() + 1}-${nextEvent.dateObj.getDate()}`;
+
             dDayBadge.style.display = "block";
+            // 👇 클릭 시moveToDate 함수 실행
             dDayBadge.innerHTML = `🔔 다음 일정: ${nextEvent.title} (${dDayText})`;
+            dDayBadge.onclick = () => moveToDate(targetDateStr); // 클릭 이벤트 연결
+            
         } else {
             dDayBadge.style.display = "none";
         }
@@ -575,7 +600,25 @@ function showDetail(dateStr, element) {
             panel.classList.toggle('collapsed');
         }
     }
-    
+
+    // 🚀 특정 날짜로 스크롤 이동 및 선택 함수
+    function moveToDate(dateStr) {
+        const targetId = `day-${dateStr}`;
+        const targetEl = document.getElementById(targetId);
+
+        if (targetEl) {
+            // 1. 해당 날짜가 화면 가운데로 오도록 부드럽게 스크롤
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // 2. 잠시 후 번쩍이는 효과 (선택 강조)
+            setTimeout(() => {
+                // 이미 showDetail 함수 안에 상세 패널 여는 기능이 있으니 click()만 하면 됨
+                targetEl.click(); 
+            }, 300); // 스크롤이 시작된 후 약간의 딜레이를 두고 클릭 효과
+        } else {
+            alert("해당 날짜를 찾을 수 없습니다.");
+        }
+    }
 </script>
 
 </body>
