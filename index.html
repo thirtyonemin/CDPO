@@ -382,8 +382,8 @@ function showDetail(dateStr, element) {
                     // 검색어 URL 인코딩 (한글 깨짐 방지)
                     const query = encodeURIComponent(evt.location);
                     mapLinkHtml = `
-                        <a href="https://m.map.naver.com/search2/search.naver?query=${query}" target="_blank" class="map-btn">
-                            <span class="map-icon">📍</span> ${evt.location}
+                        <a href="javascript:void(0);" onclick="openMap('${evt.location}')" class="map-btn">
+                            <span class="map-icon">📍</span> ${evt.location} 보기 (앱)
                         </a>
                     `;
                 }
@@ -457,6 +457,33 @@ function showDetail(dateStr, element) {
     // 🔥 실행 시작!
     loadData();
 
+    // 🚀 지도 앱 실행 함수 (안드로이드/iOS 모두 앱 없으면 웹으로)
+    function openMap(placeName) {
+        const query = encodeURIComponent(placeName);
+        const userAgent = navigator.userAgent;
+        
+        // 🌐 웹사이트 주소 (앱 없을 때 이동할 곳)
+        const webUrl = `https://m.map.naver.com/search2/search.naver?query=${query}`;
+
+        // 1. 안드로이드 (Intent 방식 + 웹 폴백)
+        if (userAgent.match(/Android/i)) {
+            // S.browser_fallback_url 파라미터가 핵심입니다.
+            // 앱이 설치되어 있지 않으면, 지정된 webUrl로 이동합니다.
+            window.location.href = `intent://search?query=${query}&appname=com.cdpo.calendar#Intent;scheme=nmap;action=android.intent.action.VIEW;package=com.nhn.android.nmap;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+        }
+        // 2. 아이폰/아이패드 (URL Scheme + 타임아웃 방식)
+        else if (userAgent.match(/iPhone|iPad|iPod/i)) {
+            const appUrl = `nmap://search?query=${query}&appname=com.cdpo.calendar`;
+            
+            // 1.5초 뒤에 웹으로 이동 (앱이 켜지면 브라우저가 숨겨지므로 실행 안 됨)
+            setTimeout(() => { window.location.href = webUrl; }, 1500);
+            window.location.href = appUrl;
+        }
+        // 3. PC (그냥 새 창)
+        else {
+            window.open(`https://map.naver.com/v5/search/${query}`, '_blank');
+        }
+    }
 </script>
 
 </body>
