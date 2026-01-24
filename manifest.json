@@ -1,0 +1,20 @@
+{
+  "name": "2026 관현악반 캘린더",
+  "short_name": "CDPO 2026",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fdfdfd",
+  "theme_color": "#fdfdfd",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
