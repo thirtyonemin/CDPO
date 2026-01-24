@@ -144,17 +144,81 @@
         .task-title { font-weight: 800; font-size: 16px; display: block; margin-bottom: 5px; }
         .task-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.4; }
 
-        /* 📱 모바일/태블릿 최적화 */
-        @media (max-width: 1024px) {
-            body { height: auto; overflow: auto; }
-            .container { flex-direction: column; height: auto; }
-            .calendar-area { overflow: visible; padding: 15px; order: 2; }
-            .detail-panel { flex: none; width: 100%; border-left: none; border-bottom: 1px solid var(--border-color); padding: 20px; order: 1; position: sticky; top: 0; z-index: 100; max-height: 250px; overflow-y: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-            .header-title { font-size: 20px; }
-            .day { height: 50px; }
-            .search-box { width: 140px; }
-            .legend { display: flex; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; }
+        /* 📱 모바일/태블릿 최적화 (접기 기능 추가됨) */
+    @media (max-width: 1024px) {
+        body { height: auto; overflow: auto; }
+        .container { flex-direction: column; height: auto; }
+        
+        .calendar-area { 
+            overflow: visible; 
+            padding: 15px; 
+            order: 2; 
         }
+
+        .detail-panel { 
+            flex: none; 
+            width: 100%; 
+            border-left: none; 
+            border-bottom: 1px solid var(--border-color); 
+            padding: 15px 20px; 
+            order: 1; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            background: var(--bg-panel);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        /* 날짜 제목을 버튼처럼 보이게 */
+        .panel-date { 
+            cursor: pointer; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin-bottom: 0; /* 접었을 때 여백 제거 */
+            font-size: 20px;
+            padding-bottom: 5px; /* 밑줄 간격 */
+        }
+
+        /* 접기/펴기 화살표 아이콘 */
+        .toggle-icon {
+            font-size: 14px;
+            color: var(--text-secondary);
+            transition: transform 0.3s;
+        }
+
+        /* 내용물 영역 (애니메이션용) */
+        #taskList {
+            overflow: hidden;
+            max-height: 500px; /* 충분히 큰 값 */
+            opacity: 1;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out, margin-top 0.3s;
+            margin-top: 15px;
+        }
+
+        /* 🔒 접힌 상태 (collapsed 클래스가 붙으면 적용됨) */
+        .detail-panel.collapsed #taskList {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+        }
+        
+        .detail-panel.collapsed .panel-date {
+            border-bottom: none; /* 접었을 때는 밑줄 제거 */
+        }
+
+        .detail-panel.collapsed .toggle-icon {
+            transform: rotate(180deg); /* 화살표 뒤집기 */
+        }
+        
+        /* 모바일 기타 조정 */
+        .header-title { font-size: 20px; }
+        .day { height: 50px; }
+        .search-box { width: 140px; }
+        .legend { display: flex; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; }
+    }
+        
         /* 📍 지도 버튼 스타일 */
     .map-btn {
         display: inline-flex;
@@ -206,8 +270,11 @@
         </div>
     </div>
 
-    <div class="detail-panel">
-        <div class="panel-date" id="displayDate">TODAY</div>
+    <div class="detail-panel" id="detailPanel">
+        <div class="panel-date" onclick="togglePanel()">
+            <span id="displayDate">TODAY</span>
+            <span class="toggle-icon">▼</span> </div>
+        
         <div id="taskList">
             <div style="color:var(--text-secondary); text-align:center; margin-top:50px; font-size:14px;">
                 📅 오늘: <span id="todayText"></span><br><br>
@@ -357,6 +424,7 @@
     }
 
 function showDetail(dateStr, element) {
+    document.getElementById('detailPanel').classList.remove('collapsed');
         if(element) {
             document.querySelectorAll('.day').forEach(el => el.classList.remove('selected'));
             element.classList.add('selected');
@@ -484,6 +552,16 @@ function showDetail(dateStr, element) {
             window.open(`https://map.naver.com/v5/search/${query}`, '_blank');
         }
     }
+
+    // 📱 패널 접고 펴기 함수
+    function togglePanel() {
+        // 모바일 화면일 때만 동작하도록
+        if (window.innerWidth <= 1024) {
+            const panel = document.getElementById('detailPanel');
+            panel.classList.toggle('collapsed');
+        }
+    }
+    
 </script>
 
 </body>
